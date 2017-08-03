@@ -30,21 +30,29 @@ https://mapzen.com/data/metro-extracts/metro/san-francisco-bay_california/
 http://www.caltrain.com/developer.html
 
 ### Build R5
+```
 brew install java
 brew install gpg
 
 gpg --gen-key
+```
 
 // Put this in the bashrc
+```
 export GPG_TTY=$(tty)
+```
 
 // build the jar with dependencies
+```
 mvn clean compile assembly:single
-
-cd target
+```
 
 // create the network
+```
 java -cp r5-2.5.0-SNAPSHOT-jar-with-dependencies.jar com.conveyal.r5.R5Main point --build /path/to/files
+```
 
 // start r5 as local servers
+```
 java -cp r5-2.5.0-SNAPSHOT-jar-with-dependencies.jar com.conveyal.r5.R5Main point --graphs /path/to/files
+```
