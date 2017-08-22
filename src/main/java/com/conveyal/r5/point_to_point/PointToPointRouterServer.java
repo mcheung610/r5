@@ -374,6 +374,8 @@ public class PointToPointRouterServer {
             profileRequest.fromLon = fromLon;
             profileRequest.toLat = toLat;
             profileRequest.toLon = toLon;
+            profileRequest.transitModes = EnumSet.of(TransitModes.TRANSIT);
+
             StreetRouter streetRouter = new StreetRouter(transportNetwork.streetLayer);
 
             streetRouter.profileRequest = profileRequest;
@@ -381,6 +383,7 @@ public class PointToPointRouterServer {
 
             // TODO use target pruning instead of a distance limit
             streetRouter.distanceLimitMeters = 100_000;
+
             //Split for end coordinate
             if (!streetRouter.setDestination(profileRequest.toLat, profileRequest.toLon)) {
                 content.put("errors", "Edge near the end coordinate wasn't found. Routing didn't start!");

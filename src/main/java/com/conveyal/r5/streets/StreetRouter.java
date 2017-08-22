@@ -34,7 +34,7 @@ public class StreetRouter {
 
     private static final Logger LOG = LoggerFactory.getLogger(StreetRouter.class);
 
-    private static final boolean DEBUG_OUTPUT = false;
+    private static final boolean DEBUG_OUTPUT = true;
 
     public static final int ALL_VERTICES = -1;
 

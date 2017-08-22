@@ -206,14 +206,17 @@ public class PointToPointQuery {
         for(LegMode mode: request.egressModes) {
             StreetRouter streetRouter = new StreetRouter(transportNetwork.streetLayer);
             streetRouter.transitStopSearch = true;
+
             streetRouter.dominanceVariable = StreetRouter.State.RoutingVariable.DURATION_SECONDS;
+            streetRouter.timeLimitSeconds = request.getTimeLimit(mode);
+
             if (egressUnsupportedModes.contains(mode)) {
                 continue;
             }
             //TODO: add support for bike sharing
             streetRouter.streetMode = StreetMode.valueOf(mode.toString());
             streetRouter.profileRequest = request;
-            streetRouter.timeLimitSeconds = request.getTimeLimit(mode);
+
             if(streetRouter.setOrigin(request.toLat, request.toLon)) {
                 streetRouter.route();
                 TIntIntMap stops = streetRouter.getReachedStops();
@@ -321,14 +324,17 @@ public class PointToPointQuery {
                 streetRouter.streetMode = StreetMode.valueOf(mode.toString());
 
                 //Gets correct maxCar/Bike/Walk time in seconds for access leg based on mode since it depends on the mode
-                streetRouter.timeLimitSeconds = request.getTimeLimit(mode);
                 streetRouter.transitStopSearch = true;
+
+                streetRouter.timeLimitSeconds = request.getTimeLimit(mode);
                 streetRouter.dominanceVariable = StreetRouter.State.RoutingVariable.DURATION_SECONDS;
 
                 if(streetRouter.setOrigin(request.fromLat, request.fromLon)) {
                     streetRouter.route();
+                    TIntIntMap stops = streetRouter.getReachedStops();
                     //Searching for access paths
                     accessRouter.put(mode, streetRouter);
+                    LOG.info("added {} access stops for mode {}", stops.size(), mode);
                 } else {
                     LOG.warn("MODE:{}, Edge near the origin coordinate wasn't found. Routing didn't start!", mode);
                 }
@@ -504,7 +510,7 @@ public class PointToPointQuery {
                 case CAR_PARK:
                     maxTime = request.maxCarTime;
                     minTime = request.minCarTime;
-                    penalty = CAR_PENALTY;
+                    //penalty = CAR_PENALTY;
                     break;
             }
 

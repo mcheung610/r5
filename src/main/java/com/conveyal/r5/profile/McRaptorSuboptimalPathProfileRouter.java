@@ -57,7 +57,7 @@ public class McRaptorSuboptimalPathProfileRouter {
      */
     public int NUMBER_OF_SEARCHES = 20;
 
-    private final boolean DUMP_STOPS = false;
+    private final boolean DUMP_STOPS = true;
 
     private LinkedPointSet pointSet = null;
 

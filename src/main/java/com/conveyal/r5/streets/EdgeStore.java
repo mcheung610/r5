@@ -604,8 +604,23 @@ public class EdgeStore implements Serializable {
                     weight *=1.5;
                 }
 
-            } else if (streetMode == StreetMode.CAR && getFlag(EdgeFlag.ALLOWS_CAR)) {
+            } else if (streetMode == StreetMode.CAR) {
+                boolean walking = !getFlag(EdgeFlag.ALLOWS_CAR);
+
+                // get drop off
+                if (walking) {
+                    speedms = calculateSpeed(req, StreetMode.WALK);
+                    time = (float) (getLengthM() / speedms);
+                }
+
                 weight = time;
+
+                // only walk if you're allowed to
+                if (walking && !getFlag(EdgeFlag.ALLOWS_PEDESTRIAN)) return null;
+
+                if (walking) {
+                    s1.streetMode = StreetMode.WALK;
+                }
             } else {
                 return null; // this mode cannot traverse this edge
             }
