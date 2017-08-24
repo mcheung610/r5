@@ -82,13 +82,13 @@ public class ProfileRequest implements Serializable, Cloneable {
      * This is solved by using separate walk budgets at the origin and destination. It could also be solved (although this
      * would slow the algorithm down) by retaining all Pareto-optimal combinations of (travel time, walk distance).
      */
-    public int    maxWalkTime = 30;
+    public int    maxWalkTime = 5;
     
     /** Maximum bike time when using transit */
-    public int    maxBikeTime = 30;
+    public int    maxBikeTime = 5;
     
     /** Maximum car time before when using transit */ 
-    public int    maxCarTime = 30;
+    public int    maxCarTime = 5;
     
     /** Minimum time to ride a bike (to prevent extremely short bike legs) */
     public int    minBikeTime = 5;

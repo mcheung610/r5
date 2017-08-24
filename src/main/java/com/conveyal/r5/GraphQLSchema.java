@@ -7,6 +7,7 @@ import com.conveyal.r5.point_to_point.builder.PointToPointQuery;
 import com.conveyal.r5.profile.ProfileRequest;
 import com.conveyal.r5.transit.fare.RideType;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.transit.realtime.GtfsRealtime;
 import graphql.GraphQLException;
 import graphql.Scalars;
 import graphql.language.StringValue;
@@ -1430,19 +1431,19 @@ public class GraphQLSchema {
                 .name("maxWalkTime")
                 .type(Scalars.GraphQLInt)
                 .description("Maximum walk time before and after using transit, in minutes")
-                .defaultValue(30)
+                .defaultValue(10)
                 .build())
             .argument(GraphQLArgument.newArgument()
                 .name("maxBikeTime")
                 .type(Scalars.GraphQLInt)
                 .description("Maximum bike time when using transit in minutes")
-                .defaultValue(30)
+                .defaultValue(10)
                 .build())
             .argument(GraphQLArgument.newArgument()
                 .name("maxCarTime")
                 .type(Scalars.GraphQLInt)
                 .description("Maximum car time before when using transit in minutes")
-                .defaultValue(30)
+                .defaultValue(10)
                 .build())
             .argument(GraphQLArgument.newArgument()
                 .name("minBikeTime")

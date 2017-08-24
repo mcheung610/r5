@@ -56,7 +56,7 @@ public class StreetPath {
     }
 
     /**
-     * Creates Streetpaths which consists of multiple parts
+     * Creates Streetpaths which consists of multiple parts. Use in findDirectPaths
      *
      * Like in Bike sharing and P+R
      * @param lastState last state of last streetrouter (walking from bike station or from P+R parking) this is destination
