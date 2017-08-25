@@ -20,9 +20,12 @@ import com.conveyal.r5.profile.StreetPath;
 import com.conveyal.r5.profile.RepeatedRaptorProfileRouter;
 import com.conveyal.r5.streets.*;
 import com.conveyal.r5.transit.TransportNetwork;
+import com.csvreader.CsvReader;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.google.transit.realtime.GtfsRealtime;
+import com.lyft.five11.client.Open511Client;
 import com.vividsolutions.jts.geom.*;
 import com.vividsolutions.jts.operation.buffer.BufferParameters;
 import com.vividsolutions.jts.operation.buffer.OffsetCurveBuilder;
@@ -31,13 +34,21 @@ import gnu.trove.set.TIntSet;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLException;
+import jdk.internal.util.xml.impl.Input;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.time.LocalDate;
 
 import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.conveyal.r5.streets.VertexStore.fixedDegreesToFloating;
 import static com.conveyal.r5.streets.VertexStore.floatingDegreesToFixed;
@@ -61,6 +72,10 @@ public class PointToPointRouterServer {
     private static final String USAGE = "It expects --build [path to directory with GTFS and PBF files] to build the graphs\nor --graphs [path to directory with graph] to start the server with provided graph";
 
     public static final int RADIUS_METERS = 200;
+
+    private static ScheduledExecutorService executorService;
+
+    private static String open511ApiKey = "3114fc3d-2bf7-42e7-bd3e-de30d3ae0e43";
 
     public static void main(String[] commandArguments) {
 
@@ -1052,6 +1067,43 @@ public class PointToPointRouterServer {
 
         }), JsonUtilities.objectMapper::writeValueAsString);
 
+        //TODO read the trip id to train number
+        readTrainMapping(transportNetwork);
+
+        //TODO use spring to wire these services
+        Open511Client open511Client = new Open511Client(open511ApiKey);
+
+        //TODO move this into its own service
+        transportNetwork.transitLayer.tripUpdate = new ConcurrentHashMap<>();
+        executorService = Executors.newScheduledThreadPool(10);
+        executorService.scheduleAtFixedRate(() -> {
+            try {
+                GtfsRealtime.FeedMessage feedMessage = open511Client.getTripUpdates("caltrain");
+                for (GtfsRealtime.FeedEntity feedEntity : feedMessage.getEntityList()) {
+                    String routeId = feedEntity.getTripUpdate().getTrip().getRouteId();
+                    String tripId = feedEntity.getTripUpdate().getTrip().getTripId();
+                    transportNetwork.transitLayer.tripUpdate.put(tripId, feedEntity.getTripUpdate());
+                }
+            } catch (Exception e) {
+                LOG.error("error retriving trip updates for caltrain", e);
+            }
+        }, 10, 10, TimeUnit.SECONDS);
+    }
+
+    private static void readTrainMapping(TransportNetwork transportNetwork) {
+        transportNetwork.transitLayer.tripIdMap = new HashMap<>();
+        InputStream inputStream = ClassLoader.getSystemResourceAsStream("gtfs-caltrain/realtime_trips.txt");
+        CsvReader csvReader = new CsvReader(inputStream, Charset.defaultCharset());
+        try {
+            csvReader.readHeaders();
+            while (csvReader.readRecord()) {
+                String tripId = csvReader.get(0);
+                String trainNumber = csvReader.get(1);
+                transportNetwork.transitLayer.tripIdMap.put(tripId, trainNumber);
+            }
+        } catch (IOException e) {
+            LOG.error("error reading realtime_trips.txt", e);
+        }
     }
 
     private static void makeTurnEdge(TransportNetwork transportNetwork, boolean both,

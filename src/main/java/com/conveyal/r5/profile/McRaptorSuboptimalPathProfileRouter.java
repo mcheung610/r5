@@ -13,6 +13,7 @@ import com.conveyal.r5.transit.TransportNetwork;
 import com.conveyal.r5.transit.TripFlag;
 import com.conveyal.r5.transit.TripPattern;
 import com.conveyal.r5.transit.TripSchedule;
+import com.google.transit.realtime.GtfsRealtime;
 import gnu.trove.list.TIntList;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
@@ -276,6 +277,23 @@ public class McRaptorSuboptimalPathProfileRouter {
         return new ArrayList<>(paths.values());
     }
 
+    private int getRealtimeTripDelay(String tripId, int stopSequence) {
+        //TODO need some sort of adaptor to map each transit
+        String strippedTripId = tripId.split(":")[1];
+        String trainNum = network.transitLayer.tripIdMap.get(strippedTripId);
+        GtfsRealtime.TripUpdate tripUpdate = network.transitLayer.tripUpdate.get(trainNum);
+        if (tripUpdate != null) {
+            for (GtfsRealtime.TripUpdate.StopTimeUpdate stopTimeUpdate : tripUpdate.getStopTimeUpdateList()) {
+                String stopId = network.transitLayer.stopIdForIndex.get(stopSequence);
+                String strippedStopId = stopId.split(":")[1];
+                if (stopTimeUpdate.getStopId().equalsIgnoreCase(strippedStopId)) {
+                    return stopTimeUpdate.getArrival().getDelay();
+                }
+            }
+        }
+        return 0;
+    }
+
     /** perform one round of the McRAPTOR search. Returns true if anything changed */
     private boolean doOneRound () {
         // optimization: on the last round, only explore patterns near the destination
@@ -301,6 +319,7 @@ public class McRaptorSuboptimalPathProfileRouter {
 
             TripPattern pattern = network.transitLayer.tripPatterns.get(patIdx);
             RouteInfo routeInfo = network.transitLayer.routes.get(pattern.routeIndex);
+
             TransitModes mode = TransitLayer.getTransitModes(routeInfo.route_type);
             //skips trip patterns with trips which don't run on wanted date
             if (!pattern.servicesActive.intersects(servicesActive) ||
@@ -330,6 +349,7 @@ public class McRaptorSuboptimalPathProfileRouter {
                     int boardStopPositionInPattern = boardStopsPositionsPerPatternSequence.get(e.getKey());
 
                     int arrival;
+                    int delay = getRealtimeTripDelay(sched.tripId, stop);
 
                     // we know we have no mixed schedule/frequency patterns, see check on boarding
                     if (sched.headwaySeconds != null) {
@@ -339,7 +359,7 @@ public class McRaptorSuboptimalPathProfileRouter {
                         arrival = sched.arrivals[stopPositionInPattern];
                     }
 
-                    if (addState(stop, boardStopPositionInPattern, stopPositionInPattern, arrival, patIdx, trip, e.getValue()))
+                    if (addState(stop, boardStopPositionInPattern, stopPositionInPattern, arrival + delay, patIdx, trip, e.getValue()))
                         touchedStops.set(stop);
                 }
 

@@ -14,6 +14,7 @@ import com.conveyal.r5.util.LocationIndexedLineInLocalCoordinateSystem;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.transit.realtime.GtfsRealtime;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
@@ -39,6 +40,7 @@ import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.zone.ZoneRulesException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -158,6 +160,9 @@ public class TransitLayer implements Serializable, Cloneable {
      * don't modify the transit network. (This never happens yet, but will when we allow street editing.)
      */
     public String scenarioId;
+
+    public transient Map<String, String> tripIdMap = new HashMap<>();
+    public transient ConcurrentHashMap<String, GtfsRealtime.TripUpdate> tripUpdate = new ConcurrentHashMap<>();
 
     /** Load a GTFS feed with full load level */
     public void loadFromGtfs (GTFSFeed gtfs) throws DuplicateFeedException {
